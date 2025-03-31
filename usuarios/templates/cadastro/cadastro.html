@@ -5,19 +5,7 @@
 
 {% block 'body' %}
 
-    {% if messages %}
-        {% for message in messages %}
-            <div class="rounded-md {{message.tags}} mt-4">
-                <div class="flex">
-                    <div class="ml-3 py-4">
-                        {{message}}
-
-                    </div>
-
-                </div>
-            </div>
-        {% endfor %}
-    {% endif %}
+   
     <div class="flex min-h-screen bg-slate-900">
         <div class="flex flex-1 flex-col justify-center px-4 py-12 sm:px-6 lg:flex-none lg:px-20 xl:px-24">
         <div class="mx-auto w-full max-w-sm lg:w-96">
@@ -27,13 +15,28 @@
             <h2 class="mt-4 text-2xl/9 font-bold tracking-tight text-gray-100">Crie sua conta</h2> 
                     <p class="mt-2 text-sm/6 text-gray-500">
                 Já tem uma conta?
-                <a href="" class="font-semibold text-indigo-300 hover:text-indigo-200">Faça login</a>
+                <a href="{% url "login" %}" class="font-semibold text-indigo-300 hover:text-indigo-200">Faça login</a>
             </p>
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="rounded-md {{message.tags}} mt-4">
+                        <div class="flex">
+                            <div class="ml-3 py-4">
+                                {{message}}
+        
+                            </div>
+        
+                        </div>
+                    </div>
+                {% endfor %}
+            {% endif %}
+
             </div>
     
             <div class="mt-8">
             <div>
-                <form action="" method="" class="space-y-6">
+                <form action="{% url "cadastro" %}" method="POST" class="space-y-6">
+                    {% csrf_token %}
                 <div>
                     <label for="email" class="block text-sm/6 font-medium text-gray-200">Username</label>
                     <div class="mt-2">

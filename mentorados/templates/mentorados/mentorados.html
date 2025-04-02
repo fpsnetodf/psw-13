@@ -37,7 +37,7 @@
     <div class="max-w-7xl mx-auto py-12">
         <div class="grid grid-cols-2 gap-4">
             <div>
-              <form action="" method="">
+              <form action="{% url "mentorados" %}" method="POST" enctype="multipart/form-data">
                 <h2 class="mt-4 text-2xl/9 font-bold tracking-tight text-gray-100">Cadastre seus mentorados</h2> 
                 {% if messages %}
                     {% for message in messages %}
@@ -69,8 +69,9 @@
                         <label class="block text-sm/6 font-medium text-gray-200">Estágio</label>
                         <div class="mt-2">
                             <select name="estagio" id="" class="block w-full rounded-md bg-white/5 px-3 py-2 text-base text-white  outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-500 sm:text-sm/6">
-         
-                                <option class="text-slate-900" value="">10-1000k</option>
+                                {% for estagio in estagios %}
+                                  <option class="text-slate-900" value="{{ estagio.0 }}">{{ estagio.1}}</option>
+                                {% endfor %}
 
                             </select>
                            
@@ -83,11 +84,10 @@
                         <label class="block text-sm/6 font-medium text-gray-200">Navigator</label>
                         <div class="mt-2">
                             <select name="navigator" id="" class="block w-full rounded-md bg-white/5 px-3 py-2 text-base text-white  outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-500 sm:text-sm/6">
-
-                                <option value="">Caio</option>      
-                              
-                            </select>
-                           
+                              {% for navigator in navigators %}
+                                <option value="{{ navigator.id }}">{{ navigator.nome }}</option>    
+                              {% endfor %}                               
+                            </select>                           
                         </div>
                         <br>
                         <button type="submit" class="flex w-full justify-center cursor-pointer rounded-md bg-indigo-600 px-3 py-1.5 text-sm/6 font-semibold text-white shadow-sm hover:bg-indigo-500  focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">Cadastrar</button>
@@ -124,17 +124,17 @@
               </thead>
               <tbody class="divide-y divide-white/5">
                 
-               
+                {% for mentorado in mentorados %}
                   <tr>
                     <td class="py-4 pl-4 pr-8 sm:pl-6 lg:pl-8">
                       <div class="flex items-center gap-x-4">
-                        <img src="#" alt="" class="size-8 rounded-full bg-gray-800">
-                        <div class="truncate text-sm/6 font-medium text-white">Caio Sampaio</div>
+                        <img src="{{ mentorado.foto.url }}" alt="" class="size-8 rounded-full bg-gray-800">
+                        <div class="truncate text-sm/6 font-medium text-white">{{ mentorado.nome }}</div>
                       </div>
                     </td>
                     <td class="hidden py-4 pl-0 pr-4 sm:table-cell sm:pr-8">
                       <div class="flex gap-x-3">
-                        <div class="rounded-md bg-gray-700/40 px-2 py-1 text-xs font-medium text-gray-400 ring-1 ring-inset ring-white/10">10-100k</div>
+                        <div class="rounded-md bg-gray-700/40 px-2 py-1 text-xs font-medium text-gray-400 ring-1 ring-inset ring-white/10">{{ mentorado.get_estagio_diplay }}</div>
                       </div>
                     </td>
                     <td class="py-4 pl-0 pr-4 text-sm/6 sm:pr-8 lg:pr-20">
@@ -145,20 +145,36 @@
                         <div class="hidden text-white sm:block">Ativo</div>
                       </div>
                     </td>
-                    <td class="hidden py-4 pl-0 pr-8 text-sm/6 text-gray-400 md:table-cell lg:pr-20">26/03/2025</td>
+                    <td class="hidden py-4 pl-0 pr-8 text-sm/6 text-gray-400 md:table-cell lg:pr-20">{{ mentorado.criado_em }}</td>
                     <td class="hidden py-4 pl-0 pr-8 text-sm/6 text-gray-400 md:table-cell lg:pr-20">
                      
-                        Caio Sampaio
+                        {{ mentorado.navigator.nome }}
                     </td>
                   </tr>
-                
+                  {% endfor %}
               </tbody>
             </table>
           </div>
-
-    </div>
-     
+    </div>     
   </div>
-
-
 {% endblock 'body' %}
+{% block script %}
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <script>
+      const ctx = document.getElementById('myChart');
+
+      new Chart(ctx, {
+        type: 'pie',
+        data: {
+          labels: {{estagios_flat|safe}},
+          datasets: [{
+            label: '',
+            data: {{qtd_estagios|safe}},
+            borderWidth: 1
+          }]
+        },
+        
+      });
+  </script>
+{% endblock script %}

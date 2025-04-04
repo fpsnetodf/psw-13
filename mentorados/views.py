@@ -1,7 +1,8 @@
 from datetime import datetime, timedelta
 from django.shortcuts import render, redirect
-from .models import Navigators, Mentorados, DisponibilidadeHorarios
+from .models import Navigators, Mentorados, DisponibilidadeHorarios, Reuniao
 from django.contrib.messages import add_message, constants
+from .auth import valida_token
 
 # Create your views here.
 
@@ -63,3 +64,54 @@ def reunioes(request):
 
         add_message(request, constants.SUCCESS, 'Horário disponibilizado com sucesso.')
         return redirect('reunioes')
+    
+    
+def auth(request):
+    if request.method == 'GET':
+        return render(request, 'mentorados/auth_mentorado.html')
+    else:
+        token = request.POST.get('token')
+
+        if not Mentorados.objects.filter(token=token).exists():
+            add_message(request, constants.ERROR, 'Token inválido')
+            return redirect('auth_mentorado')
+        
+        response = redirect('escolher_dia')
+        response.set_cookie('auth_token', token, max_age=3600)
+        return response
+    
+
+
+
+    
+def escolher_dia(request):
+    if not valida_token(request.COOKIES.get('auth_token')):
+        return redirect('auth_mentorado')
+    if request.method == 'GET':
+        mentorado = valida_token(request.COOKIES.get('auth_token'))
+        disponibilidades = DisponibilidadeHorarios.objects.filter(
+            data_inicial__gte=datetime.now(),
+            agendado=False,
+            mentor = mentorado.user
+           
+        ).values_list('data_inicial', flat=True)
+        horarios = []
+        for i in disponibilidades:
+            horarios.append(i.date().strftime('%d-%m-%Y'))
+
+
+        return render(request, 'mentorados/escolher_dia.html', {'horarios': list(set(horarios))})
+
+
+def agendar_reuniao(request):
+    if not valida_token(request.COOKIES.get('auth_token')):
+        return redirect('auth_mentorado')
+    if request.method == 'GET':
+        data = request.GET.get("data")
+        data = datetime.strptime(data, '%d-%m-%Y')
+        horarios = DisponibilidadeHorarios.objects.filter(
+            data_inicial__gte=data,
+            data_inicial__lt=data + timedelta(days=1),
+            agendado=False
+        )
+        return render(request, 'agendar_reuniao.html', {'horarios': horarios, 'tags': Reuniao.tag_choices})

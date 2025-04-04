@@ -46,3 +46,7 @@ def login(request):
         
         add_message(request, constants.ERROR, 'Username ou senha inválidos')
         return redirect('login')
+    
+    
+def home(request):    
+    return redirect('mentorados')

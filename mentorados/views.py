@@ -40,7 +40,8 @@ def mentorados(request):
 
 def reunioes(request):
     if request.method == 'GET':
-        return render(request, 'mentorados/reunioes.html')
+        reuniao = Reuniao.objects.all()
+        return render(request, 'mentorados/reunioes.html', {"reunioes": reuniao})
     else:
         data = request.POST.get('data')
 
@@ -97,21 +98,59 @@ def escolher_dia(request):
         ).values_list('data_inicial', flat=True)
         horarios = []
         for i in disponibilidades:
-            horarios.append(i.date().strftime('%d-%m-%Y'))
-
-
+            horarios.append(i.date())               
         return render(request, 'mentorados/escolher_dia.html', {'horarios': list(set(horarios))})
 
 
 def agendar_reuniao(request):
     if not valida_token(request.COOKIES.get('auth_token')):
         return redirect('auth_mentorado')
-    if request.method == 'GET':
+    mentorado = valida_token(request.COOKIES.get('auth_token'))
+
+    # TODO validar se o horario agendado é realmente de um mentor do mentorado
+    if request.method == 'GET':   
         data = request.GET.get("data")
-        data = datetime.strptime(data, '%d-%m-%Y')
+        if data is None:
+            data = "01-01-2025"  # Substitua por uma data padrão válida
+            data = datetime.strptime(data, "%d-%m-%Y")
+            
+
+        if isinstance(data, str):
+            data = datetime.strptime(data, "%d-%m-%Y")
+        elif isinstance(data, datetime):
+            # Se `data` já for um objeto `datetime`, não precisa fazer nada
+            pass
+        else:
+            return HttpResponse("Erro: Tipo inesperado para data.", status=400)
+
+
+        print("minha captura de horario pelo get: ", data)
+        # data = datetime.strptime(data, "%d-%m-%Y")
+        mentorado = mentorado
         horarios = DisponibilidadeHorarios.objects.filter(
             data_inicial__gte=data,
             data_inicial__lt=data + timedelta(days=1),
-            agendado=False
+            agendado=False,
+            mentor=mentorado.user
+        )    
+    
+        return render(request, 'mentorados/agendar_reuniao.html', {'horarios': horarios, 'tags': Reuniao.tag_choices})
+    else : 
+        horario_id = request.POST.get('horario')
+        tag = request.POST.get('tag')
+        descricao = request.POST.get('descricao')
+        
+        reuniao = Reuniao(
+            data_id=horario_id,
+            mentorado=mentorado,
+            tag=tag,
+            descricao=descricao
+            
         )
-        return render(request, 'agendar_reuniao.html', {'horarios': horarios, 'tags': Reuniao.tag_choices})
+        reuniao.save()
+        horario = DisponibilidadeHorarios.objects.get(id=horario_id)
+        horario.agendado = True
+        horario.save()
+        add_message(request, constants.SUCCESS, "Reunião agendada com sucesso.  ")
+        return redirect("escolher_dia/?data={{ horario }}")
+        
